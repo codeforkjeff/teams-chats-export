@@ -110,8 +110,13 @@ async def download_hosted_content_in_msg(client, chat: Dict, msg: Dict, chat_dir
                 await download_hosted_content(client, chat, msg, hosted_content_id, chat_dir)
 
 
-async def download_messages(client, chat: Dict, chat_dir: str, force: bool):
-    """download messages for a chat, including its 'hosted content'"""
+async def download_messages(client, chat: Dict, chat_dir: str, force: bool=False):
+    """
+    download messages for a chat, including its 'hosted content'
+
+    the 'force' flag downloads all messages that haven't been saved yet.
+    by default, only newer messages are downloaded.
+    """
     last_msg_id = (chat["lastMessagePreview"] or {}).get("id")
     last_msg_exists = os.path.exists(os.path.join(chat_dir, f"msg_{last_msg_id}.json"))
     if force or not last_msg_id or not last_msg_exists:
@@ -128,20 +133,21 @@ async def download_messages(client, chat: Dict, chat_dir: str, force: bool):
 
         async for msg in fetch_all_for_request(messages_request, request_config):
             path = os.path.join(chat_dir, f"msg_{msg['id']}.json")
-            # do NOT overwrite: we don't know if a retention policy means
+            # we should NEVER overwrite: we don't know if a retention policy means
             # messages disappear or their contents are erased. if the latter,
             # we don't want to overwrite the data we've already stored.
-            if force or not os.path.exists(path):
+            if not os.path.exists(path):
                 with open(path, "w") as f:
                     f.write(json.dumps(msg))
                 await download_hosted_content_in_msg(client, chat, msg, chat_dir)
                 count += 1
             else:
                 # if msg file already exists, we don't need any older msgs.
-                # this might not work in cases where lastMessagePreview refers to
-                # last modified message and not last created message, which can be
-                # different. if there's a bug, we can remove this break statement
-                break
+                # this might result in skipping msgs in cases where the chat record's
+                # lastMessagePreview refers to the last modified message and not the last
+                # created message, which can be different. hence the 'force' flag
+                if not force:
+                    break
         print(f"{count} new messages saved")
     else:
         print("No new messages in the chat since last run")
@@ -298,7 +304,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("command", choices=["download", "generate_html"])
     parser.add_argument("--output-dir", type=str, default="archive")
-    parser.add_argument("--force", help="download data even if it already exists in output dir", action="store_true")
+    parser.add_argument("--force", help="download all msgs, not just 'newest' ones", action="store_true")
     args = parser.parse_args()
 
     if args.command == "download":
