@@ -35,7 +35,7 @@ Previously downloaded data, including anything deleted on Teams since the last t
 ran the script, will be retained in the directory. (If you want to be really safe, consider
 making a backup copy of the archive directory from time to time.)
 
-If you want to customize the html outputs, edit `templates/chat.jinja` and `style.css` to your
+If you want to customize the html outputs, edit `templates/chat.jinja` to your
 liking and re-run the generate_html step above.
 
 ## Limitations

@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import base64
 from functools import cache
 import glob
 import hashlib
@@ -222,9 +223,9 @@ def render_message_body(msg: Dict, chat_dir: str, html_dir: str) -> Optional[str
         if "https://graph.microsoft.com/v1.0/chats/" in url:
             hosted_content_id = url.split("/")[-2]
             filename = f"hosted_content_{msg['id']}_{hosted_content_id}"
-            # copy it into images dir so html can reference it
-            shutil.copy(os.path.join(chat_dir, filename), os.path.join(html_dir, "images"))
-            return whole_match.replace(url, f"images/{filename}")
+            with open(os.path.join(chat_dir, filename), "rb") as f:
+                data = "data:image/png;base64," + base64.b64encode(f.read()).decode('utf-8')
+                return whole_match.replace(url, data)
         else:
             return whole_match
 
@@ -301,9 +302,6 @@ def render_all(output_dir):
     """render all the chats to html files"""
 
     makedir(os.path.join(output_dir, "html"))
-    makedir(os.path.join(output_dir, "html", "images"))
-
-    shutil.copy("style.css", os.path.join(output_dir, "html"))
 
     chat_files = sorted(glob.glob(os.path.join(output_dir, "data", "*.json")))
     for path in chat_files:

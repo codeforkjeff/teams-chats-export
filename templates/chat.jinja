@@ -4,7 +4,49 @@
 <head>
     <meta charset="utf-8" />
     <title>{{ topic }}</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: "Arial", "Open Sans", sans-serif;
+        }
+
+        .metadata {
+            margin: 1em 0 1em;
+        }
+
+        .chat-id {
+            color: gray;
+        }
+
+        .chat-type {
+            color: gray;
+        }
+
+        .members {
+            color: gray;
+        }
+
+        .from {
+            font-weight: bold;
+        }
+
+        .timestamp {
+            color: gray;
+        }
+
+        .message-content {
+            margin-left: 2em;
+        }
+
+        .message-reference {
+            background-color: lightgray;
+            padding: 0.5em;
+        }
+
+        .hosted-content {
+            background-color: lightblue;
+            padding: 0.5em;
+        }
+    </style>
 </head>
 <body>
     <h1>{{ topic }}</h1>
