@@ -249,9 +249,10 @@ def render_chat(chat: Dict, output_dir: str):
 
     member_list_str = ", ".join(sorted([m["displayName"] for m in chat["members"]]))
 
-    filename = f"{member_list_str}.html"
     if chat["topic"]:
-        filename = f"{chat['topic']} - {filename}"
+        filename = f"{chat['topic']}.html"
+    else:
+        filename = f"{member_list_str}.html"
 
     # read all the msgs for the chat, order them in chron order
 
