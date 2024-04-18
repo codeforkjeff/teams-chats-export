@@ -250,7 +250,8 @@ def render_chat(chat: Dict, output_dir: str):
     member_list_str = ", ".join(sorted([m["displayName"] for m in chat["members"]]))
 
     if chat["topic"]:
-        filename = f"{chat['topic']}.html"
+        topic = chat["topic"].replace(os.path.sep, "_")
+        filename = f"{topic}.html"
     else:
         filename = f"{member_list_str}.html"
 
