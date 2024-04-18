@@ -81,12 +81,15 @@ async def fetch_all_for_request(getable, request_config):
 
 
 async def download_hosted_content(client, chat: Dict, msg: Dict, hosted_content_id: str, chat_dir: str):
-    result = (
-        await client.chats.by_chat_id(chat["id"])
-        .messages.by_chat_message_id(msg["id"])
-        .hosted_contents.by_chat_message_hosted_content_id(hosted_content_id)
-        .content.get()
-    )
+    try:
+        result = (
+            await client.chats.by_chat_id(chat["id"])
+            .messages.by_chat_message_id(msg["id"])
+            .hosted_contents.by_chat_message_hosted_content_id(hosted_content_id)
+            .content.get()
+        )
+    except Exception as e:
+        result = str(e)
     path = os.path.join(chat_dir, f"hosted_content_{msg['id']}_{hosted_content_id}")
     with open(path, "wb") as f:
         f.write(result)
@@ -132,22 +135,22 @@ async def download_messages(client, chat: Dict, chat_dir: str, force: bool=False
         )
 
         async for msg in fetch_all_for_request(messages_request, request_config):
-            path = os.path.join(chat_dir, f"msg_{msg['id']}.json")
-            # we should NEVER overwrite: we don't know if a retention policy means
-            # messages disappear or their contents are erased. if the latter,
-            # we don't want to overwrite the data we've already stored.
-            if not os.path.exists(path):
-                with open(path, "w") as f:
-                    f.write(json.dumps(msg))
-                await download_hosted_content_in_msg(client, chat, msg, chat_dir)
-                count += 1
-            else:
-                # if msg file already exists, we don't need any older msgs.
-                # this might result in skipping msgs in cases where the chat record's
-                # lastMessagePreview refers to the last modified message and not the last
-                # created message, which can be different. hence the 'force' flag
-                if not force:
-                    break
+            # if incoming msg was deleted, do nothing; we don't want to overwrite it
+            if not msg['deletedDateTime']:
+                path = os.path.join(chat_dir, f"msg_{msg['id']}.json")
+                if not os.path.exists(path):
+                    with open(path, "w") as f:
+                        f.write(json.dumps(msg))
+                    await download_hosted_content_in_msg(client, chat, msg, chat_dir)
+                    count += 1
+                else:
+                    # if msg file already exists, we don't need any older msgs.
+                    # this might result in skipping msgs in cases where the chat record's
+                    # lastMessagePreview refers to the last modified message and not the last
+                    # created message, which can be different. hence the 'force' flag
+                    if not force:
+                        break
+
         print(f"{count} new messages saved")
     else:
         print("No new messages in the chat since last run")
