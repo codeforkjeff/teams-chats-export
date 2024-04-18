@@ -2,6 +2,7 @@ import argparse
 import asyncio
 from functools import cache
 import glob
+import hashlib
 import json
 import os
 import pprint
@@ -249,11 +250,25 @@ def render_chat(chat: Dict, output_dir: str):
 
     member_list_str = ", ".join(sorted([m["displayName"] for m in chat["members"]]))
 
+    # construct filename
+
+    filename_size_limit = 255
+    ext = ".html"
+
     if chat["topic"]:
-        topic = chat["topic"].replace(os.path.sep, "_")
-        filename = f"{topic}.html"
+        base_filename = chat["topic"].replace(os.path.sep, "_")
     else:
-        filename = f"{member_list_str}.html"
+        base_filename = member_list_str
+
+    # most file systems seem to have a filename limit of 255 chars
+    if len(base_filename + ext) > filename_size_limit:
+        # truncate and append hash of original string for uniqueness
+        m = hashlib.sha256()
+        m.update(base_filename.encode('utf-8'))
+        hash = m.hexdigest()[0:8]
+        base_filename = base_filename[0:filename_size_limit-len(ext)-len(hash)] + hash
+
+    filename = base_filename + ext
 
     # read all the msgs for the chat, order them in chron order
 
