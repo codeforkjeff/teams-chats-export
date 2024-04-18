@@ -61,8 +61,7 @@ async def fetch_all_for_request(getable, request_config):
     returns an iterator over the dict records returned from a request
 
     getable = an MS Graph API object with a get() method.
-    expand = list of expansion options to pass to MS Graph API endpoint:
-      https://learn.microsoft.com/en-us/graph/sdks/create-requests?tabs=csharp#use-expand-to-access-related-entities
+    request_config = request configuration object to pass to get()
     """
     results = None
     getable_ = getable
