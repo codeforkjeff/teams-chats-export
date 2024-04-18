@@ -10,7 +10,7 @@ an application with the Microsoft Identity Platform. The only requirement is Pyt
 
 ## Instructions
 
-To archive your chats to a datestamped directory:
+To archive your chats:
 
 ```sh
 # set up and activate a virtual environment
