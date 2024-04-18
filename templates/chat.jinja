@@ -1,0 +1,42 @@
+{% set topic = chat.topic|d("(No Topic)", true) %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>{{ topic }}</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>{{ topic }}</h1>
+
+    <section class="metadata">
+        <div class="chat-id">ID: {{chat.id}}</div>
+        <div class="chat-type">Chat Type: {{chat.chatType}}</div>
+        <div class="members">Members: {{member_list_str}}</div>
+    </section>
+
+    {% for msg_dict in messages %}
+        {% set msg = msg_dict.obj %}
+        <div data-msg-id="{{ msg.id }}">
+            <span class="from">
+            {%- if msg.from and msg.from.user -%}
+                {{ msg.from.user.displayName }}
+            {%- else -%}
+                Unknown
+            {%- endif -%}
+            </span>
+            <span  class="timestamp">{{ msg.createdDateTime|localdt }}</span>
+        </div>
+        <div class="message-content">
+            {%- if msg.eventDetail -%}
+                <p>{{ msg.eventDetail['@odata.type'] }}</p>
+            {%- elif msg.deletedDateTime -%}
+                <p><em>(MESSAGE DELETED)</em></p>
+            {%- else -%}
+                {{ msg_dict.content }}
+            {%- endif -%}
+        </div>
+    {% endfor %}
+
+</body>
+</html>
