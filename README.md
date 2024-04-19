@@ -35,6 +35,11 @@ Previously downloaded data, including anything deleted on Teams since the last t
 ran the script, will be retained in the directory. (If you want to be really safe, consider
 making a backup copy of the archive directory from time to time.)
 
+Only "new" messages are downloaded, but this logic may not catch certain edge cases.
+If you're missing messages or you don't see edits, or you just want to be absolutely sure
+you're downloading everything, run `python teams_chats_export.py download --force`
+to re-process all the available messages on Teams.
+
 If you want to customize the html outputs, edit `templates/chat.jinja` to your
 liking and re-run the generate_html step above.
 

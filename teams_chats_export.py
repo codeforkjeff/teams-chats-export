@@ -96,6 +96,9 @@ async def fetch_all_for_request(getable, request_config):
 
 
 async def download_hosted_content(client, chat: Dict, msg: Dict, hosted_content_id: str, chat_dir: str):
+    # it's happened in one case that a user doesn't have access to the hosted content
+    # in a chat they're a member of. not sure how that's possible, but that's why
+    # this check is here.
     try:
         result = (
             await client.chats.by_chat_id(chat["id"])
@@ -131,6 +134,8 @@ async def download_hosted_content_in_msg(client, chat: Dict, msg: Dict, chat_dir
 async def download_messages(client, chat: Dict, chat_dir: str, force: bool = False):
     """
     download messages for a chat, including its 'hosted content'
+
+    Note that msg ids are not globally unique. They're millisecond timestamps.
 
     the 'force' flag downloads all messages that haven't been saved yet.
     by default, only newer messages are downloaded.
