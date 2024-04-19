@@ -268,7 +268,7 @@ def render_chat(chat: Dict, output_dir: str):
     filename_size_limit = 255
     ext = ".html"
 
-    base_file_name = get_chat_name(chat)
+    base_filename = get_chat_name(chat)
 
     # most file systems seem to have a filename limit of 255 chars
     if len(base_filename + ext) > filename_size_limit:
