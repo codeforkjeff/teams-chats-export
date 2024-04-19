@@ -128,7 +128,7 @@ async def download_hosted_content_in_msg(client, chat: Dict, msg: Dict, chat_dir
                 await download_hosted_content(client, chat, msg, hosted_content_id, chat_dir)
 
 
-async def download_messages(client, chat: Dict, chat_dir: str, force: bool=False):
+async def download_messages(client, chat: Dict, chat_dir: str, force: bool = False):
     """
     download messages for a chat, including its 'hosted content'
 
@@ -142,16 +142,16 @@ async def download_messages(client, chat: Dict, chat_dir: str, force: bool=False
         messages_request = client.me.chats.by_chat_id(chat["id"]).messages
 
         query_params = MessagesRequestBuilder.MessagesRequestBuilderGetQueryParameters(
-            top = 50,
+            top=50,
         )
         request_config = MessagesRequestBuilder.MessagesRequestBuilderGetRequestConfiguration(
             options=[ResponseHandlerOption(NativeResponseHandler())],
-            query_parameters = query_params,
+            query_parameters=query_params,
         )
 
         async for msg in fetch_all_for_request(messages_request, request_config):
             # if incoming msg was deleted, do nothing; we don't want to overwrite it
-            if not msg['deletedDateTime']:
+            if not msg["deletedDateTime"]:
                 path = os.path.join(chat_dir, f"msg_{msg['id']}.json")
                 if not os.path.exists(path):
                     with open(path, "w") as f:
@@ -194,12 +194,11 @@ async def download_all(output_dir: str, force: bool):
     print("Opening browser window for authentication")
 
     query_params = ChatsRequestBuilder.ChatsRequestBuilderGetQueryParameters(
-            expand=["members", "lastMessagePreview"],
-            top=50
+        expand=["members", "lastMessagePreview"], top=50
     )
     request_config = ChatsRequestBuilder.ChatsRequestBuilderGetRequestConfiguration(
         options=[ResponseHandlerOption(NativeResponseHandler())],
-        query_parameters = query_params,
+        query_parameters=query_params,
     )
     async for chat in fetch_all_for_request(client.me.chats, request_config):
         await download_chat(client, chat, data_dir, force)
@@ -239,7 +238,7 @@ def render_message_body(msg: Dict, chat_dir: str, html_dir: str) -> Optional[str
             filename = f"hosted_content_{msg['id']}_{hosted_content_id}"
             with open(os.path.join(chat_dir, filename), "rb") as f:
                 # TODO: not all images are actually png but this seems to work anyway
-                data = "data:image/png;base64," + base64.b64encode(f.read()).decode('utf-8')
+                data = "data:image/png;base64," + base64.b64encode(f.read()).decode("utf-8")
                 return whole_match.replace(url, data) + f" data-hosted-content-id='{hosted_content_id}'"
         else:
             return whole_match
@@ -275,9 +274,9 @@ def render_chat(chat: Dict, output_dir: str):
     if len(base_filename + ext) > filename_size_limit:
         # truncate and append hash of original string for uniqueness
         m = hashlib.sha256()
-        m.update(base_filename.encode('utf-8'))
+        m.update(base_filename.encode("utf-8"))
         hash = m.hexdigest()[0:8]
-        base_filename = base_filename[0:filename_size_limit-len(ext)-len(hash)] + hash
+        base_filename = base_filename[0 : filename_size_limit - len(ext) - len(hash)] + hash
 
     filename = base_filename + ext
 
