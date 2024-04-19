@@ -224,8 +224,9 @@ def render_message_body(msg: Dict, chat_dir: str, html_dir: str) -> Optional[str
             hosted_content_id = url.split("/")[-2]
             filename = f"hosted_content_{msg['id']}_{hosted_content_id}"
             with open(os.path.join(chat_dir, filename), "rb") as f:
+                # TODO: not all images are actually png but this seems to work anyway
                 data = "data:image/png;base64," + base64.b64encode(f.read()).decode('utf-8')
-                return whole_match.replace(url, data)
+                return whole_match.replace(url, data) + f" data-hosted-content-id='{hosted_content_id}'"
         else:
             return whole_match
 
