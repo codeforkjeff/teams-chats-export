@@ -135,10 +135,18 @@ async def download_messages(client, chat: Dict, chat_dir: str, force: bool = Fal
     the 'force' flag downloads all messages that haven't been saved yet.
     by default, only newer messages are downloaded.
     """
+
+    async def save_msg(msg):
+        with open(path, "w") as f:
+            f.write(json.dumps(msg))
+        await download_hosted_content_in_msg(client, chat, msg, chat_dir)
+
     last_msg_id = (chat["lastMessagePreview"] or {}).get("id")
     last_msg_exists = os.path.exists(os.path.join(chat_dir, f"msg_{last_msg_id}.json"))
     if force or not last_msg_id or not last_msg_exists:
-        count = 0
+        count_saved = 0
+        count_updated = 0
+        count_unchanged = 0
         messages_request = client.me.chats.by_chat_id(chat["id"]).messages
 
         query_params = MessagesRequestBuilder.MessagesRequestBuilderGetQueryParameters(
@@ -150,30 +158,43 @@ async def download_messages(client, chat: Dict, chat_dir: str, force: bool = Fal
         )
 
         async for msg in fetch_all_for_request(messages_request, request_config):
-            # if incoming msg was deleted, do nothing; we don't want to overwrite it
-            if not msg["deletedDateTime"]:
-                path = os.path.join(chat_dir, f"msg_{msg['id']}.json")
-                if not os.path.exists(path):
-                    with open(path, "w") as f:
-                        f.write(json.dumps(msg))
-                    await download_hosted_content_in_msg(client, chat, msg, chat_dir)
-                    count += 1
-                else:
-                    # if msg file already exists, we don't need any older msgs.
-                    # this might result in skipping msgs in cases where the chat record's
-                    # lastMessagePreview refers to the last modified message and not the last
-                    # created message, which can be different. hence the 'force' flag
-                    if not force:
-                        break
+            path = os.path.join(chat_dir, f"msg_{msg['id']}.json")
+            if not os.path.exists(path):
+                await save_msg(msg)
+                count_saved += 1
+            else:
+                # if incoming msg was deleted, we don't want to overwrite our file
+                if not msg["deletedDateTime"]:
+                    with open(path, "r") as f:
+                        existing_msg = json.loads(f.read())
 
-        print(f"{count} new messages saved")
+                    # save edited/modified msgs
+                    if (
+                        existing_msg["lastModifiedDateTime"] != msg["lastModifiedDateTime"]
+                        or existing_msg["lastEditedDateTime"] != msg["lastEditedDateTime"]
+                    ):
+                        await save_msg(msg)
+                        count_updated += 1
+                    else:
+                        count_unchanged += 1
+                        # msg exists but hasn't been edited/modified, so we can stop
+                        # if we're not running in force mode
+                        if not force:
+                            break
+                else:
+                    count_unchanged += 1
+
+        output = f"  Message counts: {count_saved} saved, {count_updated} updated"
+        if force:
+            output += f", {count_unchanged} unchanged"
+        print(output)
     else:
-        print("No new messages in the chat since last run")
+        print("  No new messages in the chat since last run")
 
 
 async def download_chat(client, chat: Dict, data_dir: str, force: bool):
     """download a single chat and its associated data (messages, attachments)"""
-    print(f"Downloading chat {get_chat_name(chat)} (id {chat['id']})")
+    print(f"Processing chat {get_chat_name(chat)} (id {chat['id']})")
 
     chat_dir = os.path.join(data_dir, chat["id"])
     makedir(chat_dir)
