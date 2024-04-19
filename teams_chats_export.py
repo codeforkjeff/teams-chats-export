@@ -245,14 +245,14 @@ def render_message_body(msg: Dict, chat_dir: str, html_dir: str) -> Optional[str
         attachment_id = match.group(1)
         attachment = [a for a in msg["attachments"] if a["id"] == attachment_id][0]
         if attachment["contentType"] == "reference":
-            return f"Attachment: <a href='{attachment['contentUrl']}'>{attachment['name']}</a><br/>"
+            return f"Attachment: <a href='{attachment['contentUrl']}' data-attachment-id='{attachment['id']}'>{attachment['name']}</a><br/>"
         elif attachment["contentType"] == "messageReference":
             ref = json.loads(attachment["content"])
             return f"<blockquote class='message-reference' data-attachment-id='{attachment['id']}'>{ref['messageSender']['user']['displayName']}: {ref['messagePreview']}</blockquote>"
         elif attachment["contentType"] == "application/vnd.microsoft.card.codesnippet":
             hosted_content_id = get_hosted_content_id(attachment)
             content = render_hosted_content(msg, hosted_content_id, chat_dir)
-            return f"<div class='hosted-content' data-attachment-id='{attachment['id']}'><pre><code>{content}</code></pre></div>"
+            return f"<div class='hosted-content' data-attachment-id='{attachment['id']}' data-hosted-content-id='{hosted_content_id}'><pre><code>{content}</code></pre></div>"
         else:
             return f"Attachment (raw data): {pprint.pformat(attachment)}<br/>"
 
