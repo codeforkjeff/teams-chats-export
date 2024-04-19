@@ -49,6 +49,20 @@ def localdt(value: str, format="%m/%d/%Y %I:%M %p %Z"):
     return local_dt.strftime(format)
 
 
+def get_member_list(chat: dict):
+    """return a sorted comma-separated list of chat members"""
+    return ", ".join(sorted([m["displayName"] for m in chat["members"]]))
+
+
+def get_chat_name(chat: dict):
+    """get a "name" for the chat: either its topic or a comma-separated list of members"""
+    if chat["topic"]:
+        name = chat["topic"].replace(os.path.sep, "_")
+    else:
+        name = get_member_list(chat)
+    return name
+
+
 def get_hosted_content_id(attachment: dict) -> str:
     """extract the hosted_content_id from the Attachment dict record"""
     # it's stupid that I have to parse this. codeSnippetUrl already is the complete URL
@@ -159,7 +173,7 @@ async def download_messages(client, chat: Dict, chat_dir: str, force: bool=False
 
 async def download_chat(client, chat: Dict, data_dir: str, force: bool):
     """download a single chat and its associated data (messages, attachments)"""
-    print(f"Downloading chat id {chat['id']}")
+    print(f"Downloading chat {get_chat_name(chat)} (id {chat['id']})")
 
     chat_dir = os.path.join(data_dir, chat["id"])
     makedir(chat_dir)
@@ -250,17 +264,12 @@ def render_message_body(msg: Dict, chat_dir: str, html_dir: str) -> Optional[str
 def render_chat(chat: Dict, output_dir: str):
     """render a single chat to an html file"""
 
-    member_list_str = ", ".join(sorted([m["displayName"] for m in chat["members"]]))
-
     # construct filename
 
     filename_size_limit = 255
     ext = ".html"
 
-    if chat["topic"]:
-        base_filename = chat["topic"].replace(os.path.sep, "_")
-    else:
-        base_filename = member_list_str
+    base_file_name = get_chat_name(chat)
 
     # most file systems seem to have a filename limit of 255 chars
     if len(base_filename + ext) > filename_size_limit:
@@ -293,7 +302,7 @@ def render_chat(chat: Dict, output_dir: str):
         f.write(
             template.render(
                 chat=chat,
-                member_list_str=member_list_str,
+                member_list_str=get_member_list(chat),
                 messages=msgs,
             )
         )
