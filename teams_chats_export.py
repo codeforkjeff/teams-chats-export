@@ -27,6 +27,8 @@ import pytz
 # see https://pnp.github.io/powershell/cmdlets/Request-PnPAccessToken.html
 pnp_management_shell_client_id = "31359c7f-bd7e-475c-86db-fdb8c937548e"
 
+filename_size_limit = 255
+
 
 def makedir(path):
     """basically mkdir -p"""
@@ -61,6 +63,15 @@ def get_chat_name(chat: dict):
     else:
         name = get_member_list(chat)
     return name
+
+
+def get_hosted_content_filename(msg_id, hosted_content_id):
+    """
+    return a base filename for the msg_id + hosted_content_id,
+    truncating if necessary to keep it under the filename size limit
+    """
+    filename = f"hosted_content_{msg_id}_{hosted_content_id}"
+    return filename[0:filename_size_limit]
 
 
 def get_hosted_content_id(attachment: dict) -> str:
@@ -108,7 +119,8 @@ async def download_hosted_content(client, chat: Dict, msg: Dict, hosted_content_
         )
     except Exception as e:
         result = str(e)
-    path = os.path.join(chat_dir, f"hosted_content_{msg['id']}_{hosted_content_id}")
+    filename = get_hosted_content_filename(msg['id'], hosted_content_id)
+    path = os.path.join(chat_dir, filename)
     with open(path, "wb") as f:
         f.write(result)
 
@@ -231,7 +243,7 @@ async def download_all(output_dir: str, force: bool):
 
 
 def render_hosted_content(msg: Dict, hosted_content_id: str, chat_dir: str):
-    filename = f"hosted_content_{msg['id']}_{hosted_content_id}"
+    filename = get_hosted_content_filename(msg['id'], hosted_content_id)
     path = os.path.join(chat_dir, filename)
     with open(path, "r") as f:
         data = f.read()
@@ -261,7 +273,7 @@ def render_message_body(msg: Dict, chat_dir: str, html_dir: str) -> Optional[str
         url = match.group(1)
         if "https://graph.microsoft.com/v1.0/chats/" in url:
             hosted_content_id = url.split("/")[-2]
-            filename = f"hosted_content_{msg['id']}_{hosted_content_id}"
+            filename = get_hosted_content_filename(msg['id'], hosted_content_id)
             with open(os.path.join(chat_dir, filename), "rb") as f:
                 # TODO: not all images are actually png but this seems to work anyway
                 data = "data:image/png;base64," + base64.b64encode(f.read()).decode("utf-8")
@@ -291,7 +303,6 @@ def render_chat(chat: Dict, output_dir: str):
 
     # construct filename
 
-    filename_size_limit = 255
     ext = ".html"
 
     base_filename = get_chat_name(chat)
