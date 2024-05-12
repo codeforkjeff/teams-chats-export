@@ -335,6 +335,11 @@ def render_chat(chat: Dict, output_dir: str):
     # write out the html file
 
     path = os.path.join(html_dir, filename)
+    count = 1
+    while os.path.exists(path):
+        new_filename = f"{base_filename}_{count}{ext}"
+        path = os.path.join(html_dir, new_filename)
+        count += 1
     with open(path, "w") as f:
         print(f"Writing {path}")
         template = get_jinja_env().get_template("chat.jinja")
