@@ -53,7 +53,10 @@ def localdt(value: str, format="%m/%d/%Y %I:%M %p %Z"):
 
 def get_member_list(chat: dict):
     """return a sorted comma-separated list of chat members"""
-    return ", ".join(sorted([m["displayName"] for m in chat["members"]]))
+    members = [
+        m["displayName"] if m["displayName"] else "No Name" for m in chat["members"]
+    ]
+    return ", ".join(sorted(members))
 
 
 def get_chat_name(chat: dict):
