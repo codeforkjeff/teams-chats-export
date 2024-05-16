@@ -5,8 +5,13 @@ Script to export your Microsoft Teams [chats](https://learn.microsoft.com/en-us/
 and view them as .html files. Chats are conversations separate from those on Teams channels. These include one-on-one chats,
 group chats, and meeting chats.
 
+## Design Goals
+
 Unlike similar export tools, this does NOT require using Windows or PowerShell, or registering
 an application with the Microsoft Identity Platform. The only requirement is Python.
+
+This was created specifically in response to a new retention policy for Teams chats
+implemented at my workplace.
 
 ## Instructions
 
@@ -29,6 +34,7 @@ python teams_chats_export.py generate_html
 The download step will open a browser window for you to authenticate.
 
 Files will be written to directories named `data` and `html` within the output directory.
+The `html` directory includes an `index.html` containing a listing of the chats.
 
 You can run the download step on your archive directory periodically to update the data.
 Previously downloaded data, including anything deleted on Teams since the last time you
@@ -40,7 +46,7 @@ If you're missing messages or you don't see edits, or you just want to be absolu
 you're downloading everything, run `python teams_chats_export.py download --force`
 to re-process all the available messages on Teams.
 
-If you want to customize the html outputs, edit `templates/chat.jinja` to your
+If you want to customize the html outputs, edit the files in `templates/` to your
 liking and re-run the generate_html step above.
 
 ## Limitations

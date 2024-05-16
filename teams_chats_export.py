@@ -3,7 +3,6 @@ import asyncio
 import base64
 from functools import cache
 import glob
-import hashlib
 import json
 import os
 import pprint
@@ -302,23 +301,9 @@ def render_message_body(msg: Dict, chat_dir: str, html_dir: str) -> Optional[str
 
 
 def render_chat(chat: Dict, output_dir: str):
-    """render a single chat to an html file"""
-
-    # construct filename
-
-    ext = ".html"
-
-    base_filename = get_chat_name(chat)
-
-    # most file systems seem to have a filename limit of 255 chars
-    if len(base_filename + ext) > filename_size_limit:
-        # truncate and append hash of original string for uniqueness
-        m = hashlib.sha256()
-        m.update(base_filename.encode("utf-8"))
-        hash = m.hexdigest()[0:8]
-        base_filename = base_filename[0 : filename_size_limit - len(ext) - len(hash)] + hash
-
-    filename = base_filename + ext
+    """
+    render a single chat to an html file. returns the name of the file rendered.
+    """
 
     # read all the msgs for the chat, order them in chron order
 
@@ -334,12 +319,10 @@ def render_chat(chat: Dict, output_dir: str):
 
     # write out the html file
 
+    filename = f"{chat['id']}.html"
+
     path = os.path.join(html_dir, filename)
-    count = 1
-    while os.path.exists(path):
-        new_filename = f"{base_filename}_{count}{ext}"
-        path = os.path.join(html_dir, new_filename)
-        count += 1
+
     with open(path, "w") as f:
         print(f"Writing {path}")
         template = get_jinja_env().get_template("chat.jinja")
@@ -350,10 +333,13 @@ def render_chat(chat: Dict, output_dir: str):
                 messages=msgs,
             )
         )
+    return filename
 
 
 def render_all(output_dir):
     """render all the chats to html files"""
+
+    all_chats = []
 
     makedir(os.path.join(output_dir, "html"))
 
@@ -361,7 +347,25 @@ def render_all(output_dir):
     for path in chat_files:
         with open(path, "r") as f:
             chat = json.loads(f.read())
-            render_chat(chat, output_dir)
+
+            filename = render_chat(chat, output_dir)
+
+            chat_name = get_chat_name(chat)
+
+            all_chats.append({ "filename": filename, "chat_name": chat_name })
+
+    all_chats = sorted(all_chats, key=lambda d: d['chat_name'])
+
+    index_file = os.path.join(output_dir, "html", "index.html")
+
+    with open(index_file, "w") as f:
+        print(f"Writing {index_file}")
+        template = get_jinja_env().get_template("index.jinja")
+        f.write(
+            template.render(
+                chats=all_chats,
+            )
+        )
 
 
 def get_graph_client() -> GraphServiceClient:

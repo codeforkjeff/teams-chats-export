@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Exported Chats</title>
+    <style>
+        body {
+            font-family: "Arial", "Open Sans", sans-serif;
+        }
+        .chat-entry {
+            line-height: 2em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Exported Chats</h1>
+
+    {% for chat in chats %}
+        <div class="chat-entry"><a href="{{ chat.filename}}">{{ chat.chat_name }}</a></div>
+    {% endfor %}
+
+</body>
+</html>
