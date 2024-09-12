@@ -8,6 +8,7 @@ import os
 import pprint
 import re
 import shutil
+import sys
 from typing import Dict, Optional
 
 from azure.identity import InteractiveBrowserCredential
@@ -20,11 +21,7 @@ from msgraph.generated.chats.chats_request_builder import ChatsRequestBuilder
 from msgraph.generated.chats.item.messages.messages_request_builder import MessagesRequestBuilder
 import pytz
 
-# this is the universal client id (aka application id) used by Microsoft's "PnP PowerShell".
-# users typically are granted access to this in every organization and lets us avoid having
-# to create an Azure Application and grant it permissions for use with the MS Graph API.
-# see https://pnp.github.io/powershell/cmdlets/Request-PnPAccessToken.html
-pnp_management_shell_client_id = "31359c7f-bd7e-475c-86db-fdb8c937548e"
+client_id = os.getenv("CLIENT_ID")
 
 filename_size_limit = 255
 
@@ -369,7 +366,11 @@ def render_all(output_dir):
 
 
 def get_graph_client() -> GraphServiceClient:
-    credential = InteractiveBrowserCredential(client_id=pnp_management_shell_client_id)
+    if not client_id:
+        print("Error: the CLIENT_ID environment variable isn't set")
+        sys.exit(1)
+
+    credential = InteractiveBrowserCredential(client_id=client_id)
     scopes = ["Chat.Read"]
     client = GraphServiceClient(credentials=credential, scopes=scopes)
     return client
