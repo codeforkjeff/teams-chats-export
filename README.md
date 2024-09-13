@@ -43,9 +43,9 @@ Copy your new application's "Application (client) ID" from the Overview screen. 
 something like "31359c7f-bd7e-475c-86db-fdb8c937548e" (that's the ID for the old built-in
 PnP Management Shell Entra App that Microsoft has disabled, it won't work).
 
-### Run the script
+### Install the script
 
-To archive your chats:
+Do this once:
 
 ```sh
 # set up and activate a virtual environment
@@ -54,6 +54,15 @@ python -m venv teams-chats-export-env
 
 # install dependencies
 pip install -r requirements.txt
+```
+
+### Run the script
+
+To archive your chats:
+
+```sh
+# activate the virtual env every time you want to use it
+. ./teams-chats-export-env/bin/activate
 
 # run two steps to download and generate html files in the './archive' directory
 # to use another dir, set --output-dir=/some/other/dir
