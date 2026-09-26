@@ -1,5 +1,5 @@
-azure-identity==1.16.0
+azure-identity==1.25.3
 dateparser==1.2.0
 Jinja2==3.1.3
-msgraph-sdk==1.2.0
+msgraph-sdk==1.61.0
 pytz
