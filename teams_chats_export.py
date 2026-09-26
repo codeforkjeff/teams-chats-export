@@ -135,6 +135,8 @@ async def download_hosted_content(client, chat: Dict, msg: Dict, hosted_content_
         result = str(e)
     filename = get_hosted_content_filename(msg['id'], hosted_content_id)
     path = os.path.join(chat_dir, filename)
+    if isinstance(result, str):
+        result = result.encode('utf-8')
     with open(path, "wb") as f:
         f.write(result)
 
@@ -169,7 +171,7 @@ async def download_messages(client, chat: Dict, chat_dir: str, force: bool = Fal
 
     async def save_msg(msg):
         with open(path, "w") as f:
-            f.write(json.dumps(msg))
+            json.dump(msg, f, indent=2)
         await download_hosted_content_in_msg(client, chat, msg, chat_dir)
 
     last_msg_id = (chat["lastMessagePreview"] or {}).get("id")
@@ -197,7 +199,7 @@ async def download_messages(client, chat: Dict, chat_dir: str, force: bool = Fal
                 # if incoming msg was deleted, we don't want to overwrite our file
                 if not msg["deletedDateTime"]:
                     with open(path, "r") as f:
-                        existing_msg = json.loads(f.read())
+                        existing_msg = json.load(f)
 
                     # save edited/modified msgs
                     if (
@@ -227,11 +229,11 @@ async def download_chat(client, chat: Dict, data_dir: str, force: bool):
     """download a single chat and its associated data (messages, attachments)"""
     print(f"Processing chat {get_chat_name(chat)} (id {chat['id']})")
 
-    chat_dir = os.path.join(data_dir, chat["id"])
+    chat_dir = os.path.join(data_dir, sanitize_filename(chat["id"]))
     makedir(chat_dir)
 
-    with open(os.path.join(data_dir, f"{chat['id']}.json"), "w") as f:
-        f.write(json.dumps(chat))
+    with open(os.path.join(data_dir, f"{sanitize_filename(chat['id'])}.json"), "w") as f:
+        json.dump(chat, f, indent=2)
 
     await download_messages(client, chat, chat_dir, force)
 
@@ -320,31 +322,30 @@ def render_chat(chat: Dict, output_dir: str):
     # read all the msgs for the chat, order them in chron order
 
     html_dir = os.path.join(output_dir, "html")
-    chat_dir = os.path.join(output_dir, "data", chat["id"])
+    chat_dir = os.path.join(output_dir, "data", sanitize_filename(chat["id"]))
 
-    messages_files = sorted(glob.glob(os.path.join(chat_dir, f"msg_*.json")))
+    messages_files = glob.glob(os.path.join(chat_dir, f"msg_*.json"))
     msgs = []
     for path in messages_files:
         with open(path, "r") as f:
-            msg = json.loads(f.read())
-            msgs.append({"obj": msg, "content": render_message_body(msg, chat_dir, html_dir)})
-
+            msg = json.load(f)
+            dt = dateparser.parse(msg["createdDateTime"])
+            msgs.append({"obj": msg, "content": render_message_body(msg, chat_dir, html_dir), "createdDateTime": int(dt.timestamp() * 1000), })
+    msgs.sort(key=lambda msg: msg['obj']['id'])
     # write out the html file
 
     filename = sanitize_filename(f"{chat['id']}.html")
 
     path = os.path.join(html_dir, filename)
 
-    with open(path, "w") as f:
+    with open(path, "wb") as f:
         print(f"Writing {path}")
         template = get_jinja_env().get_template("chat.jinja")
-        f.write(
-            template.render(
-                chat=chat,
-                member_list_str=get_member_list(chat),
-                messages=msgs,
-            )
-        )
+        template.stream(
+            chat=chat,
+            member_list_str=get_member_list(chat),
+            messages=msgs,
+        ).dump(f, encoding='utf-8')
     return filename
 
 
@@ -358,7 +359,7 @@ def render_all(output_dir):
     chat_files = sorted(glob.glob(os.path.join(output_dir, "data", "*.json")))
     for path in chat_files:
         with open(path, "r") as f:
-            chat = json.loads(f.read())
+            chat = json.load(f)
 
             filename = render_chat(chat, output_dir)
 
@@ -370,14 +371,12 @@ def render_all(output_dir):
 
     index_file = os.path.join(output_dir, "html", "index.html")
 
-    with open(index_file, "w") as f:
+    with open(index_file, "wb") as f:
         print(f"Writing {index_file}")
         template = get_jinja_env().get_template("index.jinja")
-        f.write(
-            template.render(
-                chats=all_chats,
-            )
-        )
+        template.stream(
+            chats=all_chats,
+        ).dump(f, encoding='utf-8')
 
 
 def get_graph_client() -> GraphServiceClient:

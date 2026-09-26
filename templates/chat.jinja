@@ -67,7 +67,7 @@
                 Unknown
             {%- endif -%}
             </span>
-            <span  class="timestamp">{{ msg.createdDateTime|localdt }}</span>
+            <span class="timestamp" data-timestamp="{{msg_dict.createdDateTime}}">{{ msg.createdDateTime }}</span>
         </div>
         <div class="message-content">
             {%- if msg.eventDetail -%}
@@ -80,5 +80,8 @@
         </div>
     {% endfor %}
 
+    <script>
+    document.querySelectorAll("[data-timestamp]").forEach(e=>{let t=+e.dataset.timestamp;t&&(e.textContent=new Date(t).toLocaleString())});
+    </script>
 </body>
 </html>
