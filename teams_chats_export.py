@@ -39,6 +39,18 @@ def makedir(path):
         os.makedirs(os.path.join(path), exist_ok=True)
 
 
+def merge_dirs(old_dir, new_dir):
+    """copy the contents of old_dir into new_dir, and remove old_dir"""
+    if os.path.exists(old_dir):
+        print("Merging directories")
+        for filename in os.listdir(old_dir):
+            source_path = os.path.join(old_dir, filename)
+            if os.path.isfile(source_path):
+                shutil.copy2(source_path, new_dir)
+                os.remove(source_path)
+        os.rmdir(old_dir)
+
+
 @cache
 def get_jinja_env():
     jinja_env = Environment(loader=FileSystemLoader("templates"))
@@ -231,6 +243,15 @@ async def download_chat(client, chat: Dict, data_dir: str, force: bool):
 
     chat_dir = os.path.join(data_dir, sanitize_filename(chat["id"]))
     makedir(chat_dir)
+
+    # using sanitized chat id for chat_dir and the chat json file is a recent change,
+    # so we need to merge in the old unsanitized directory if it exists,
+    # and delete the old json file if it exists
+    old_chat_dir = os.path.join(data_dir, chat["id"])
+    merge_dirs(old_chat_dir, chat_dir)
+    old_chat_json_path = os.path.join(data_dir, f"{chat['id']}.json")
+    if os.path.exists(old_chat_json_path):
+        os.remove(old_chat_json_path)
 
     with open(os.path.join(data_dir, f"{sanitize_filename(chat['id'])}.json"), "w") as f:
         json.dump(chat, f, indent=2)
